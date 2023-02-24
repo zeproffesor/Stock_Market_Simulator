@@ -1,39 +1,27 @@
-from Order import Order
+from LimitPrice import LimitPrice
+from Queue import Queue
 
-class OrderNode:
-    def __init__(self, order=None):
-        self.order = order
-        self.next_order = None
-        self.prev_order = None
 
-class LimitPrice:
-    def __init__(self, limit_price):
-        self.price = limit_price # float 
-        self.order_lists = ( [OrderNode(), None] , [OrderNode(), None] ) # ( [sell head, sell tail], [buy head, buy tail] )
-        self.order_lists[0][1], self.order_lists[1][1] = self.order_lists[0][0], self.order_lists[1][0] 
-        self.order_hashMap = dict() # O(1) order access
+class LimitOrderBook:
 
+    def __init__(self):
+        self.book = [LimitPrice(x) for x in range(10001)] # Limit price book
+        self.best_price = [ Queue(), Queue() ]
+    
     def add_order(self, order):
-        order_node = OrderNode(order)
-        tail = self.order_lists[order.direction][1]
-        head = self.order_lists[order.direction][0]
-        if tail != head:
-            tail.next_order = order_node
-            order_node.prev_order = tail
-        else:
-            head.next_order = order_node
-            order_node.prev_order = head
-        self.order_lists[order.direction][1] = order_node
-        self.order_hashMap[order.id] = order_node
-
+        self.book[order.limit_price].add_order(order)
+        self.best_price[order.direction].push(order.limit_price)
+    
     def cancel_order(self, order):
-        order_node = self.order_hashMap[order.id]
-        prev_node = order_node.prev_order
-        next_node = order_node.next_order
-        prev_node.next_order = next_node
-        if next_node:
-            next_node.prev_order = prev_node
-        else:
-            self.order_lists[order.direction][1] = order_node.prev_order
-        del self.order_hashMap[order.id]
+        self.book[order.limit_price].cancel_order(order)
 
+    def match_order(self, order):
+        matched_order = None
+        limit_price = 0 if order.direction else 10000
+        while (limit_price<=order.limit_price if order.direction else limit_price>=order.limit_price):
+            if self.book[limit_price].oldest_order(1-order.direction):
+                matched_order = self.book[limit_price].oldest_order(1-order.direction)
+                self.book[limit_price].cancel_order(matched_order)
+                break
+            limit_price += 1 if order.direction else -1
+        return matched_order
