@@ -6,11 +6,9 @@ class LimitOrderBook:
 
     def __init__(self):
         self.book = [LimitPrice(x) for x in range(10001)] # Limit price book
-        self.best_price = [ Queue(), Queue() ]
     
     def add_order(self, order):
         self.book[order.limit_price].add_order(order)
-        self.best_price[order.direction].push(order.limit_price)
     
     def cancel_order(self, order):
         self.book[order.limit_price].cancel_order(order)
@@ -22,6 +20,7 @@ class LimitOrderBook:
             if self.book[limit_price].oldest_order(1-order.direction):
                 matched_order = self.book[limit_price].oldest_order(1-order.direction)
                 self.book[limit_price].cancel_order(matched_order)
+                self.book[order.limit_price].cancel_order(order)
                 break
             limit_price += 1 if order.direction else -1
         return matched_order
