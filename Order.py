@@ -10,3 +10,7 @@ class Order:
         self.limit_price = limit_price # float
         self.id = Order.unq_id
         Order.unq_id += 1
+
+    def __str__(self):
+        ret = "{},{}".format(self.direction, self.limit_price)
+        return ret

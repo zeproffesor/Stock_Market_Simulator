@@ -7,6 +7,12 @@ class LimitOrderBook:
     def __init__(self):
         self.book = [LimitPrice(x) for x in range(10001)] # Limit price book
     
+    def __str__(self):
+        ret = ""
+        for lp in self.book:
+            ret += str(lp)
+        return ret
+
     def add_order(self, order):
         self.book[order.limit_price].add_order(order)
     

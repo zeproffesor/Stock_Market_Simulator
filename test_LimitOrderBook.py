@@ -4,6 +4,12 @@ from Order import Order
 
 class LimitOrderBookTest(TestCase):
 
+    def test_str(self):
+        lob = LimitOrderBook()
+        order = Order(1,1,'AAPL',200)
+        lob.add_order(order)
+        self.assertEqual("1,200\n",lob.__str__())
+
     def test_add_order(self):
         lob = LimitOrderBook()
         order = Order(1,1,'AAPL',200)

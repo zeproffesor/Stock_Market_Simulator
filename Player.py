@@ -2,7 +2,14 @@ import sys
 import socket
 import selectors
 import types
+from matplotlib import pyplot
+import numpy
+from IPython.display import clear_output
 
+
+ALPHA = 5.0
+MU = 5.0
+DELTA = 3.0
 
 class Player:
     def __init__(self):
@@ -22,6 +29,33 @@ class Player:
             outb=b"",
         )
         self.sel.register(sock, events, data=data)
+    
+    def generate_orders(self):
+        num_market_orders = numpy.random.poisson(MU)
+        num_limit_orders = numpy.random.poisson(ALPHA)
+        num_cancel_orders = numpy.random.poisson(DELTA)
+
+        ret = []
+        for _ in range(num_market_orders):
+            order = "1 "
+            dir = numpy.random.randint(0,2)
+            order += str(dir)+" "
+            order += "AAPL "
+            order += "10000 " if dir else "0 "
+            ret.append(order)
+        
+        for _ in range(num_limit_orders):
+            order = "1 "
+            dir = numpy.random.randint(0,2)
+            order += str(dir)+" "
+            order += "AAPL "
+            price = numpy.random.randint(0,10001)
+            order += str(price)+" "
+            ret.append(order)
+
+        cancel_orders = list(numpy.random.choice(numpy.array(self.curr_orders), num_cancel_orders))
+        ret.extend(cancel_orders)
+        return ret
 
     def place_order(self, key, mask):
         sock = key.fileobj
@@ -61,6 +95,7 @@ class Player:
                 self.sel.unregister(sock)
                 sock.close()
 
+    # Can be used for passing custom orders
     def play(self, host, port):
         try:
             while True:
@@ -68,7 +103,9 @@ class Player:
                 if events:
                     for key, mask in events:
                         self.place_order(key, mask)
-                order = bytes(input("Place order:"),'utf-8')
+                # Example order = "1, 0, AAPL, 100"
+                order = input("Place order:")
+                order = bytes(order,'utf-8')
                 self.start_connection(host, int(port), order)
                 if not self.sel.get_map():
                     break
@@ -77,6 +114,23 @@ class Player:
         finally:
             self.sel.close()
 
+    # def play(self, host, port):
+    #     try:
+    #         while True:
+    #             events = self.sel.select(timeout=1)
+    #             if events:
+    #                 for key, mask in events:
+    #                     self.place_order(key, mask)
+    #             # Example order = "1, 0, AAPL, 100"
+    #             orders = self.generate_orders()
+    #             for order in orders:
+    #                 self.start_connection(host, int(port), order)
+    #             if not self.sel.get_map():
+    #                 break
+    #     except KeyboardInterrupt:
+    #         print("\nCaught keyboard interrupt, exiting")
+    #     finally:
+    #         self.sel.close()
 
 def main():
     if len(sys.argv) != 3:
